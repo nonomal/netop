@@ -1,3 +1,6 @@
 /target
 .history
-Cargo.lock
+
+# IDE
+.vscode
+.idea

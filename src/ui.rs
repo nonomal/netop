@@ -1,19 +1,19 @@
 use crate::{app::Apps, runner::InputMode};
 use chrono::Local;
-use tui::{
-    backend::Backend,
+use ratatui::{
     layout::{Alignment, Constraint, Corner, Direction, Layout},
     style::{Color, Modifier, Style},
     symbols,
-    text::{Span, Spans, Text},
+    text::{Span, Text},
     widgets::{
         Axis, Block, Borders, Chart, Dataset, GraphType, List, ListItem, Paragraph, Sparkline,
         Tabs, Wrap,
     },
     Frame,
 };
+use ratatui::text::Line;
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
+pub fn draw(f: &mut Frame, apps: &mut Apps) {
     let app = apps.app_map.get_mut(&apps.rules[apps.index]).unwrap();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -47,7 +47,15 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
                         .add_modifier(Modifier::BOLD)
                         .add_modifier(Modifier::ITALIC),
                 ),
-                Span::raw(" to start editing."),
+                Span::raw(" to start editing, "),
+                Span::styled(
+                    "dd",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD)
+                        .add_modifier(Modifier::ITALIC),
+                ),
+                Span::raw(" to delete rule."),
             ],
             Style::default().add_modifier(Modifier::RAPID_BLINK),
         ),
@@ -74,12 +82,12 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
             Style::default(),
         ),
     };
-    let mut text = Text::from(Spans::from(msg));
+    let mut text = Text::from(Line::from(msg));
     text.patch_style(style);
     let help_message = Paragraph::new(text);
     f.render_widget(help_message, chunks[0]);
 
-    let input = Paragraph::new(apps.input.as_ref())
+    let input = Paragraph::new(apps.input.as_str())
         .style(match apps.input_mode {
             InputMode::Normal => Style::default(),
             InputMode::Editing => Style::default().fg(Color::Yellow),
@@ -90,7 +98,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
     let tab_items = apps
         .rules
         .iter()
-        .map(|t| Spans::from(vec![Span::styled(t, Style::default().fg(Color::Green))]))
+        .map(|t| Line::from(vec![Span::styled(t, Style::default().fg(Color::Green))]))
         .collect();
     let tabs = Tabs::new(tab_items)
         .block(Block::default().borders(Borders::ALL).title("Rules"))
@@ -120,7 +128,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
         .split(lower_left[0]);
 
     let overview_text = vec![
-        Spans::from(vec![
+        Line::from(vec![
             Span::styled(
                 "Interface:  ",
                 Style::default().fg(Color::Cyan).add_modifier(Modifier::DIM),
@@ -132,8 +140,8 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
                     .add_modifier(Modifier::ITALIC),
             ),
         ]),
-        Spans::from(""),
-        Spans::from(vec![
+        Line::from(""),
+        Line::from(vec![
             Span::styled(
                 "Start Time: ",
                 Style::default().fg(Color::Cyan).add_modifier(Modifier::DIM),
@@ -145,8 +153,8 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
                     .add_modifier(Modifier::ITALIC),
             ),
         ]),
-        Spans::from(""),
-        Spans::from(vec![
+        Line::from(""),
+        Line::from(vec![
             Span::styled(
                 "Uptime:     ",
                 Style::default().fg(Color::Cyan).add_modifier(Modifier::DIM),
@@ -189,9 +197,9 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
         .rev()
         .map(|total| {
             ListItem::new(vec![
-                Spans::from(vec![
+                Line::from(vec![
                     Span::styled(total.clone().0, Style::default().fg(Color::Yellow)),
-                    Span::raw(" ".repeat(if lower_left[0].width > 20 as u16 {
+                    Span::raw(" ".repeat(if lower_left[0].width > 20 {
                         lower_left[0].width as usize - 20
                     } else {
                         1
@@ -204,7 +212,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, apps: &mut Apps) {
                             .add_modifier(Modifier::BOLD),
                     ),
                 ]),
-                Spans::from("-".repeat(lower_left[0].width as usize - 4)),
+                Line::from("-".repeat(lower_left[0].width as usize - 4)),
             ])
         })
         .collect();
